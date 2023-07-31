@@ -1,13 +1,24 @@
 import React, { useContext } from "react";
 
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import PrimaryButton from "../../Components/Button/PrimaryButton";
 import { AuthContext } from "../../contexts/AuthProvider";
 import toast from "react-hot-toast";
+import SmallSpinner from "../../Components/Spinner/SmallSpinner";
 
 const Signup = () => {
-  const { createUser, updateUserProfile, verifyEmail } =
-    useContext(AuthContext);
+  const {
+    createUser,
+    updateUserProfile,
+    verifyEmail,
+    signInWithGoogle,
+    loading,
+    setLoading,
+  } = useContext(AuthContext);
+
+  const naviage = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
 
   const signUpSubmitHandler = (e) => {
     e.preventDefault();
@@ -35,17 +46,34 @@ const Signup = () => {
             console.log(user);
             updateUserProfile(name, photo).then(
               verifyEmail()
-                .then(toast.success("check your email for verification"))
-                .catch((err) => console.log("verification mail not sent"))
+                .then((result) => {
+                  toast.success('you have create account successfully');
+                  toast.success("check your email for verification");
+                  naviage(from, { replace: true });
+                })
+                .catch((err) => {
+                  console.log("verification mail not sent");
+                  console.log(err);
+                })
             );
           })
-          .catch((error) => console.log(error));
+          .catch((error) => {
+            toast.error(error.message);
+            setLoading(false);
+          });
       })
       .catch((error) => console.log(error));
   };
 
+  const gogleSignin = () => {
+    signInWithGoogle()
+      .then((result) => {
+        console.log(result);
+        naviage(from, { replace: true });
+      })
+      .catch((error) => console.log(error));
+  };
 
-  
   return (
     <div className="flex justify-center items-center pt-8">
       <div className="flex flex-col max-w-md p-6 rounded-md sm:p-10 bg-gray-100 text-gray-900">
@@ -122,7 +150,7 @@ const Signup = () => {
                 type="submit"
                 classes="w-full px-8 py-3 font-semibold rounded-md bg-gray-900 hover:bg-gray-700 hover:text-white text-gray-100"
               >
-                Sign up
+                {loading ? <SmallSpinner /> : "Sign up"}
               </PrimaryButton>
             </div>
           </div>
@@ -135,7 +163,11 @@ const Signup = () => {
           <div className="flex-1 h-px sm:w-16 dark:bg-gray-700"></div>
         </div>
         <div className="flex justify-center space-x-4">
-          <button aria-label="Log in with Google" className="p-3 rounded-sm">
+          <button
+            onClick={gogleSignin}
+            aria-label="Log in with Google"
+            className="p-3 rounded-sm"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 32 32"
